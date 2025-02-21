@@ -1,2 +1,2 @@
 streamlit
-PyQt5
+PyQt5>=5.15.6

@@ -4,89 +4,120 @@ from supabase import create_client, Client
 import re
 from datetime import datetime
 
-# -------------------------------
-# Initialize Supabase Client
-# -------------------------------
+# --------------------------------------------------
+# Initialize Supabase Client from Environment Variables
+# --------------------------------------------------
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://gjhhvxmfyyaqerubiugx.supabase.co")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqaGh2eG1meXlhcWVydWJpdWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzcxODAsImV4cCI6MjA1NTcxMzE4MH0.HCSBX2VOFrZk_hIF60l9JSLx4l6r8Qjg8uLM2o4Eb1k")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# -------------------------------
+st.title("Robust Inventory Management System with Supabase")
+
+# --------------------------------------------------
 # Database Helper Functions
-# -------------------------------
+# --------------------------------------------------
 def add_order(party_name, gadi_no, order_date):
-    new_order = {"party_name": party_name, "gadi_no": gadi_no, "order_date": order_date}
-    response = supabase.table("orders").insert(new_order).execute()
-    if response.get("data") and len(response["data"]) > 0:
-        return response["data"][0]["id"]
-    else:
+    try:
+        new_order = {"party_name": party_name, "gadi_no": gadi_no, "order_date": order_date}
+        response = supabase.table("orders").insert(new_order).execute()
+        if response.get("data") and len(response["data"]) > 0:
+            return response["data"][0]["id"]
+        else:
+            st.error("Failed to add order.")
+            return None
+    except Exception as e:
+        st.error(f"Error adding order: {e}")
         return None
 
 def add_order_item(order_id, lot_no, quantity, product_description):
-    new_item = {
-        "order_id": order_id,
-        "lot_no": lot_no,
-        "quantity": quantity,
-        "product_description": product_description,
-    }
-    supabase.table("order_items").insert(new_item).execute()
+    try:
+        new_item = {
+            "order_id": order_id,
+            "lot_no": lot_no,
+            "quantity": quantity,
+            "product_description": product_description,
+        }
+        supabase.table("order_items").insert(new_item).execute()
+    except Exception as e:
+        st.error(f"Error adding order item: {e}")
 
 def get_orders():
-    response = supabase.table("orders").select("*").order("id", desc=True).execute()
-    return response.data
+    try:
+        response = supabase.table("orders").select("*").order("id", desc=True).execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error fetching orders: {e}")
+        return []
 
 def get_order_items(order_id):
-    response = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
-    return response.data
+    try:
+        response = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error fetching order items: {e}")
+        return []
 
 def get_stock():
-    response = supabase.table("stock").select("*").order("lot_no").execute()
-    return response.data
+    try:
+        response = supabase.table("stock").select("*").order("lot_no").execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error fetching stock: {e}")
+        return []
 
 def update_stock_after_order(lot_no, quantity):
-    # Fetch current stock for the given lot_no
-    res = supabase.table("stock").select("quantity").eq("lot_no", lot_no).execute()
-    data = res.data
-    if not data or len(data) == 0:
-        return False, f"Lot no {lot_no} does not exist in stock."
-    current_qty = data[0]["quantity"]
-    if current_qty < quantity:
-        return False, f"Insufficient stock for Lot no {lot_no}. Available: {current_qty}, Required: {quantity}"
-    new_qty = current_qty - quantity
-    supabase.table("stock").update({"quantity": new_qty}).eq("lot_no", lot_no).execute()
-    return True, "Stock updated."
+    try:
+        res = supabase.table("stock").select("quantity").eq("lot_no", lot_no).execute()
+        data = res.data
+        if not data or len(data) == 0:
+            return False, f"Lot no {lot_no} does not exist in stock."
+        current_qty = data[0]["quantity"]
+        if current_qty < quantity:
+            return False, f"Insufficient stock for Lot no {lot_no}. Available: {current_qty}, Required: {quantity}"
+        new_qty = current_qty - quantity
+        supabase.table("stock").update({"quantity": new_qty}).eq("lot_no", lot_no).execute()
+        return True, "Stock updated."
+    except Exception as e:
+        return False, f"Error updating stock: {e}"
 
 def add_stock_increment(lot_no, product_description, quantity_to_add):
-    res = supabase.table("stock").select("*").eq("lot_no", lot_no).execute()
-    data = res.data
-    if data and len(data) > 0:
-        current_qty = data[0]["quantity"]
-        new_qty = current_qty + quantity_to_add
-        supabase.table("stock").update(
-            {"quantity": new_qty, "product_description": product_description}
-        ).eq("lot_no", lot_no).execute()
-    else:
-        supabase.table("stock").insert(
-            {"lot_no": lot_no, "product_description": product_description, "quantity": quantity_to_add}
-        ).execute()
+    try:
+        res = supabase.table("stock").select("*").eq("lot_no", lot_no).execute()
+        data = res.data
+        if data and len(data) > 0:
+            current_qty = data[0]["quantity"]
+            new_qty = current_qty + quantity_to_add
+            supabase.table("stock").update(
+                {"quantity": new_qty, "product_description": product_description}
+            ).eq("lot_no", lot_no).execute()
+        else:
+            supabase.table("stock").insert(
+                {"lot_no": lot_no, "product_description": product_description, "quantity": quantity_to_add}
+            ).execute()
+    except Exception as e:
+        st.error(f"Error updating stock increment: {e}")
 
 def add_stock_entry(entry):
-    # Entry: dict with inward_date, storage_area, lot_no, product_name, brand_name, in_quantity, out_quantity, balance_quantity
-    supabase.table("stock_entries").insert(entry).execute()
+    try:
+        supabase.table("stock_entries").insert(entry).execute()
+    except Exception as e:
+        st.error(f"Error adding stock entry: {e}")
 
 def update_stock_from_entry(entry):
     add_stock_entry(entry)
     combined_description = f"{entry['product_name']} - {entry['brand_name']}"
-    # Upsert: update if exists, insert if not
-    supabase.table("stock").upsert({
-        "lot_no": entry["lot_no"],
-        "product_description": combined_description,
-        "quantity": entry["balance_quantity"]
-    }).execute()
+    try:
+        supabase.table("stock").upsert({
+            "lot_no": entry["lot_no"],
+            "product_description": combined_description,
+            "quantity": entry["balance_quantity"]
+        }).execute()
+    except Exception as e:
+        st.error(f"Error upserting stock from entry: {e}")
 
-# -------------------------------
+# --------------------------------------------------
 # Parsing Functions
-# -------------------------------
+# --------------------------------------------------
 def parse_order_text(text):
     result = {}
     full_text = text.strip()
@@ -152,22 +183,17 @@ def parse_stock_text(text):
         entries.append(entry)
     return entries
 
-# -------------------------------
+# --------------------------------------------------
 # Streamlit App UI
-# -------------------------------
-st.title("Inventory Management System with Supabase")
-
-menu = st.sidebar.radio(
-    "Navigation",
-    [
-        "Paste Order",
-        "Paste Stock",
-        "Place Order (Manual)",
-        "Stock Management (Manual)",
-        "Stock Report",
-        "View Orders"
-    ]
-)
+# --------------------------------------------------
+menu = st.sidebar.radio("Navigation", [
+    "Paste Order",
+    "Paste Stock",
+    "Place Order (Manual)",
+    "Stock Management (Manual)",
+    "Stock Report",
+    "View Orders"
+])
 
 # ----- Paste Order Tab -----
 if menu == "Paste Order":
@@ -182,7 +208,7 @@ if menu == "Paste Order":
             st.write("**Gadi No:**", order_data.get("gadi_no", ""))
             st.write("**Order Items:**")
             for idx, item in enumerate(order_data.get("order_items", [])):
-                st.write(f"{idx+1}. **Lot:** {item['lot_no']} | **Qty:** {item['quantity']} | **Desc:** {item['product_description']}")
+                st.write(f"{idx+1}. Lot: {item['lot_no']} | Qty: {item['quantity']} | Desc: {item['product_description']}")
             if order_data.get("total") is not None:
                 st.write("**Total Boxes:**", order_data["total"])
             if st.button("Submit Parsed Order"):
@@ -213,7 +239,7 @@ if menu == "Paste Order":
 elif menu == "Paste Stock":
     st.header("Paste Stock Data")
     st.markdown(
-        "Paste stock data in this format (including header if present):\n\n"
+        "Paste stock data in this format (header optional):\n\n"
         "`InwardDate  StorageArea  LotNo  ProductName  BrandName  InQuantity  OutQuantity  BalanceQuantity`"
     )
     raw_stock_text = st.text_area("Stock Data", height=300)
@@ -226,9 +252,8 @@ elif menu == "Paste Stock":
                 st.subheader("Parsed Stock Entries")
                 for e in stock_entries:
                     st.write(
-                        f"**Date:** {e['inward_date']} | **Area:** {e['storage_area']} | "
-                        f"**Lot:** {e['lot_no']} | **Product:** {e['product_name']} - {e['brand_name']} | "
-                        f"**Bal:** {e['balance_quantity']}"
+                        f"Date: {e['inward_date']} | Area: {e['storage_area']} | Lot: {e['lot_no']} | "
+                        f"Product: {e['product_name']} - {e['brand_name']} | Bal: {e['balance_quantity']}"
                     )
                 if st.button("Submit Stock Entries"):
                     for e in stock_entries:
@@ -266,7 +291,7 @@ elif menu == "Place Order (Manual)":
     if st.session_state.manual_order_items:
         st.subheader("Order Items Added:")
         for idx, item in enumerate(st.session_state.manual_order_items):
-            st.write(f"{idx+1}. Lot No: {item['lot_no']} | Qty: {item['quantity']} | Desc: {item['product_description']}")
+            st.write(f"{idx+1}. Lot: {item['lot_no']} | Qty: {item['quantity']} | Desc: {item['product_description']}")
         if st.button("Submit Order"):
             error_flag = False
             error_messages = []
@@ -324,13 +349,11 @@ elif menu == "View Orders":
             party_name = order.get("party_name")
             gadi_no = order.get("gadi_no")
             order_date = order.get("order_date")
-            st.write(
-                f"**Order ID:** {order_id} | **Party:** {party_name} | **Vehicle:** {gadi_no} | **Date:** {order_date}"
-            )
+            st.write(f"Order ID: {order_id} | Party: {party_name} | Vehicle: {gadi_no} | Date: {order_date}")
             items = get_order_items(order_id)
             if items:
                 for item in items:
-                    st.write(f"- Lot No: {item.get('lot_no')} | Qty: {item.get('quantity')} | Desc: {item.get('product_description')}")
+                    st.write(f"- Lot: {item.get('lot_no')} | Qty: {item.get('quantity')} | Desc: {item.get('product_description')}")
             st.write("---")
     else:
         st.write("No orders found.")

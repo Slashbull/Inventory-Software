@@ -1,15 +1,16 @@
 import streamlit as st
 from supabase import create_client, Client
+from types import SimpleNamespace
 import re
 from datetime import datetime
 from config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA
 
 # --------------------------------------------------
-# Initialize Supabase Client using the options dictionary to pass the schema
+# Initialize Supabase Client
+# Wrap options in SimpleNamespace to ensure a 'headers' attribute exists.
 # --------------------------------------------------
-supabase: Client = create_client(
-    SUPABASE_URL, SUPABASE_ANON_KEY, options={"schema": SUPABASE_SCHEMA}
-)
+options = SimpleNamespace(schema=SUPABASE_SCHEMA, headers={})
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=options)
 
 st.title("Robust Inventory Management System with Supabase")
 

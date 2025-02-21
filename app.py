@@ -3,13 +3,10 @@ import streamlit as st
 from supabase import create_client, Client
 import re
 from datetime import datetime
+from config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA
 
-# --------------------------------------------------
-# Initialize Supabase Client from Environment Variables
-# --------------------------------------------------
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://gjhhvxmfyyaqerubiugx.supabase.co")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqaGh2eG1meXlhcWVydWJpdWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzcxODAsImV4cCI6MjA1NTcxMzE4MH0.HCSBX2VOFrZk_hIF60l9JSLx4l6r8Qjg8uLM2o4Eb1k")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+# Initialize the Supabase client with the public schema
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, schema=SUPABASE_SCHEMA)
 
 st.title("Robust Inventory Management System with Supabase")
 
@@ -87,13 +84,9 @@ def add_stock_increment(lot_no, product_description, quantity_to_add):
         if data and len(data) > 0:
             current_qty = data[0]["quantity"]
             new_qty = current_qty + quantity_to_add
-            supabase.table("stock").update(
-                {"quantity": new_qty, "product_description": product_description}
-            ).eq("lot_no", lot_no).execute()
+            supabase.table("stock").update({"quantity": new_qty, "product_description": product_description}).eq("lot_no", lot_no).execute()
         else:
-            supabase.table("stock").insert(
-                {"lot_no": lot_no, "product_description": product_description, "quantity": quantity_to_add}
-            ).execute()
+            supabase.table("stock").insert({"lot_no": lot_no, "product_description": product_description, "quantity": quantity_to_add}).execute()
     except Exception as e:
         st.error(f"Error updating stock increment: {e}")
 
@@ -132,11 +125,7 @@ def parse_order_text(text):
         lot_no = match[0].strip()
         quantity = int(match[1])
         description = match[2].replace("\n", " ").strip()
-        order_items.append({
-            "lot_no": lot_no,
-            "quantity": quantity,
-            "product_description": description
-        })
+        order_items.append({"lot_no": lot_no, "quantity": quantity, "product_description": description})
     result["order_items"] = order_items
     total_match = re.search(r"Total\s*:\s*(\d+)\s*bxs", full_text, re.IGNORECASE)
     result["total"] = int(total_match.group(1)) if total_match else None
@@ -184,7 +173,7 @@ def parse_stock_text(text):
     return entries
 
 # --------------------------------------------------
-# Streamlit App UI
+# Streamlit UI
 # --------------------------------------------------
 menu = st.sidebar.radio("Navigation", [
     "Paste Order",
@@ -238,10 +227,7 @@ if menu == "Paste Order":
 # ----- Paste Stock Tab -----
 elif menu == "Paste Stock":
     st.header("Paste Stock Data")
-    st.markdown(
-        "Paste stock data in this format (header optional):\n\n"
-        "`InwardDate  StorageArea  LotNo  ProductName  BrandName  InQuantity  OutQuantity  BalanceQuantity`"
-    )
+    st.markdown("Paste stock data in this format (header optional):\n`InwardDate  StorageArea  LotNo  ProductName  BrandName  InQuantity  OutQuantity  BalanceQuantity`")
     raw_stock_text = st.text_area("Stock Data", height=300)
     if st.button("Parse & Update Stock"):
         if raw_stock_text.strip():
@@ -251,10 +237,7 @@ elif menu == "Paste Stock":
             else:
                 st.subheader("Parsed Stock Entries")
                 for e in stock_entries:
-                    st.write(
-                        f"Date: {e['inward_date']} | Area: {e['storage_area']} | Lot: {e['lot_no']} | "
-                        f"Product: {e['product_name']} - {e['brand_name']} | Bal: {e['balance_quantity']}"
-                    )
+                    st.write(f"Date: {e['inward_date']} | Area: {e['storage_area']} | Lot: {e['lot_no']} | Product: {e['product_name']} - {e['brand_name']} | Bal: {e['balance_quantity']}")
                 if st.button("Submit Stock Entries"):
                     for e in stock_entries:
                         update_stock_from_entry(e)
@@ -280,11 +263,7 @@ elif menu == "Place Order (Manual)":
         add_item = st.form_submit_button("Add Item")
         if add_item:
             if lot_no and product_description and quantity:
-                st.session_state.manual_order_items.append({
-                    "lot_no": lot_no,
-                    "quantity": int(quantity),
-                    "product_description": product_description
-                })
+                st.session_state.manual_order_items.append({"lot_no": lot_no, "quantity": int(quantity), "product_description": product_description})
                 st.success(f"Added item: {lot_no} | {quantity} units | {product_description}")
             else:
                 st.error("Please fill in all fields.")

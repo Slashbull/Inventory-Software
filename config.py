@@ -13,7 +13,7 @@ SUPABASE_SCHEMA = os.getenv("SUPABASE_SCHEMA", "public")
 # -------------------------------
 # Connection Pooling & SSL Settings (Managed by Supabase)
 # -------------------------------
-POOL_MODE = os.getenv("POOL_MODE", "transaction")  # "transaction" (default) or "session"
+POOL_MODE = os.getenv("POOL_MODE", "transaction")  # "transaction" or "session"
 POOL_SIZE = int(os.getenv("POOL_SIZE", "15"))
 MAX_CLIENT_CONNECTIONS = int(os.getenv("MAX_CLIENT_CONNECTIONS", "200"))
 ENFORCE_SSL = os.getenv("ENFORCE_SSL", "true").lower() in ["true", "1", "yes"]

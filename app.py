@@ -7,9 +7,14 @@ from config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA
 
 # --------------------------------------------------
 # Initialize Supabase Client
-# Create an options object with the required attributes.
+# We wrap options in a SimpleNamespace including a headers attribute.
 # --------------------------------------------------
-options = SimpleNamespace(schema=SUPABASE_SCHEMA, auto_refresh_token=True, persist_session=True)
+options = SimpleNamespace(
+    schema=SUPABASE_SCHEMA,
+    auto_refresh_token=True,
+    persist_session=True,
+    headers={"Authorization": f"Bearer {SUPABASE_ANON_KEY}"}
+)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=options)
 
 st.title("Robust Inventory Management System with Supabase")

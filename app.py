@@ -1,12 +1,15 @@
-import os
 import streamlit as st
 from supabase import create_client, Client
 import re
 from datetime import datetime
 from config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA
 
-# Initialize the Supabase client with the public schema
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, schema=SUPABASE_SCHEMA)
+# --------------------------------------------------
+# Initialize Supabase Client with options dict to pass the schema
+# --------------------------------------------------
+supabase: Client = create_client(
+    SUPABASE_URL, SUPABASE_ANON_KEY, {"schema": SUPABASE_SCHEMA}
+)
 
 st.title("Robust Inventory Management System with Supabase")
 

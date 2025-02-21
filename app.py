@@ -5,11 +5,9 @@ from datetime import datetime
 from config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA
 
 # --------------------------------------------------
-# Initialize Supabase Client with options dict to pass the schema
+# Initialize Supabase Client with the schema as a keyword argument
 # --------------------------------------------------
-supabase: Client = create_client(
-    SUPABASE_URL, SUPABASE_ANON_KEY, {"schema": SUPABASE_SCHEMA}
-)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, schema=SUPABASE_SCHEMA)
 
 st.title("Robust Inventory Management System with Supabase")
 

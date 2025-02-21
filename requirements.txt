@@ -1,2 +1,2 @@
-streamlit>=1.25.0
-PyQt5>=5.15.6
+streamlit
+supabase
